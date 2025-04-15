@@ -46,7 +46,7 @@ recipe
  ;
 
 statements
- :  ( Comment | macro | directive ';' | pragma ';' | ifStatement)*
+ : ( Comment | macro | directive ';' | pragma ';' | ifStatement | forStatement )*
  ;
 
 directive
@@ -84,7 +84,11 @@ elseStat
   ;
 
 expression
-  : '(' (~'(' | expression)* ')'
+  : '(' expressionContent ')'
+  ;
+
+expressionContent
+  : (~('('|')') | expression)*
   ;
 
 forStatement
@@ -92,7 +96,11 @@ forStatement
  ;
 
 macro
- : Dollar OBrace (~OBrace | macro | Macro)*? CBrace
+ : Dollar OBrace macroContent CBrace
+ ;
+
+macroContent
+ : (~(OBrace|CBrace) | macro)*
  ;
 
 pragma
@@ -116,15 +124,11 @@ identifier
  ;
 
 properties
- : 'prop' ':' OBrace (propertyList)+  CBrace
- | 'prop' ':' OBrace OBrace (propertyList)+ CBrace { notifyErrorListeners("Too many start paranthesis"); }
- | 'prop' ':' OBrace (propertyList)+ CBrace CBrace { notifyErrorListeners("Too many start paranthesis"); }
- | 'prop' ':' (propertyList)+ CBrace { notifyErrorListeners("Missing opening brace"); }
- | 'prop' ':' OBrace (propertyList)+  { notifyErrorListeners("Missing closing brace"); }
+ : 'prop' ':' OBrace propertyList CBrace
  ;
 
 propertyList
- : property (',' property)*
+ : property (',' property)* ','?
  ;
 
 property
@@ -168,7 +172,11 @@ bool
  ;
 
 condition
- : OBrace (~CBrace | condition)* CBrace
+ : OBrace conditionContent CBrace
+ ;
+
+conditionContent
+ : (~CBrace | condition)*
  ;
 
 command
@@ -273,6 +281,16 @@ String
  : '\'' ( EscapeSequence | ~('\'') )* '\''
  | '"'  ( EscapeSequence | ~('"') )* '"'
  ;
+
+// Byte size lexer rule
+BYTE_SIZE 
+  : [0-9]+ ('.' [0-9]+)? ('B'|'KB'|'MB'|'GB'|'TB')
+  ;
+
+// Time duration lexer rule with expanded options
+TIME_DURATION
+  : [0-9]+ ('.' [0-9]+)? ('ms'|'s'|'m'|'h'|'d') 
+  ;
 
 EscapeSequence
    :   '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\')
